@@ -2,11 +2,15 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
-int toBase10 (char numero[], int baseActual);
-int toAnyBase (int numero, int baseDestino, int *arrEnBaseDestino);
+int toInt(char c);
 void toCadena(int *arrEnBaseDestino, char *cadena, int tamaño);
+void toAnyBase2 (char *numero, int baseActual, int baseDestino, char *cadena);
+void sumaEnBaseDestino(char *numero1, char *numero2, int baseDestino, char *sumaFinal);
 
 int main(){
+
+    //Resultado
+    char sumaFinal[100];
 
     //Declarar las variables
     char numero1[100];
@@ -15,11 +19,9 @@ int main(){
     int base2;
     int baseSuma;
 
-    //array donde estara ya convertido a la base deseada pero faltaria poner los numeros >= a 10 y <= 15 a base 16
-    int arrEnBaseDestino[100];
     //array con la cadena final
-    char numeroFinal[100];
-    int tamañoFinal;
+    char numeroFinal1[100];
+    char numeroFinal2[100];
 
     //Escaneo de datos
     printf("ingrese el primer numero y la base de este: ");
@@ -29,63 +31,118 @@ int main(){
     printf("ingrese en que base quiere la suma: ");
     scanf("%i",&baseSuma);
 
-    int sumaEnBase10 = toBase10(numero1,base1) + toBase10(numero2,base2);
+    toAnyBase2(numero1, base1, baseSuma, numeroFinal1);
+    toAnyBase2(numero2, base2, baseSuma, numeroFinal2);
 
-    tamañoFinal = toAnyBase(123456789,baseSuma,arrEnBaseDestino);
-    printf("tamaño: %i\n", tamañoFinal);
+    printf("\nnumero 1: %s = %s, numero 2: %s = %s", numero1, numeroFinal1, numero2, numeroFinal2);
 
-    for(int i=0;i<100;i++){
-        printf("%i: %i\n",i,arrEnBaseDestino[i]);
-    }
-
-    toCadena(arrEnBaseDestino,numeroFinal,tamañoFinal);
-
-    printf("cadena final: %s\n", numeroFinal);
+    sumaEnBaseDestino(numeroFinal1, numeroFinal2, baseSuma, sumaFinal);
+    printf("\n suma: %s", sumaFinal);
 
 return 0;}
 
-//convertir a base 10
-int toBase10 (char numero[], int baseActual){
-    int nBase10;
-    int tamaño = strlen(numero);
-    for(int i=tamaño-1;i>=0;i--){
-        char n = numero[i];
-        int cifraSignificativa = pow(baseActual,tamaño-i-1);
-        if(n >= 'A'){
-            nBase10 += (n-'a'+10)*cifraSignificativa;
-        }else{
-            nBase10 += (n-48)*cifraSignificativa;
-        }
+//Pasar de un char a un int
+int toInt(char c){
+    if((c >= '0') && (c <= '9')){
+        return (c-'0');
+    }else if((c >= 'a')&&(c <= 'f')){
+        return (c-'a'+10);
+    }else{
+        return 0;
     }
-return nBase10;}
+}
 
-//convertir a la base deseada
-int toAnyBase (int numero, int baseDestino, int *arrEnBaseDestino){
-    
-    int cociente = numero;
-    int i;
+//suma
+void sumaEnBaseDestino(char *numero1, char *numero2, int baseDestino, char *sumaFinal){
 
-    for(i=0;i<100;i++){
-        printf("%i\n",i);
-        if(cociente<baseDestino){
-            arrEnBaseDestino[i] = cociente;
-            break;
-        }else{
-            arrEnBaseDestino[i] = cociente%baseDestino;
-            cociente = cociente/baseDestino;
-        }
+    int arrayInts[100];
+    int acarreo = 0;
+    int tamañoNumero1 = strlen(numero1);
+    int tamañoNumero2 = strlen(numero2);
+    int tamañoMayor;
+
+    if(tamañoNumero1 > tamañoNumero2){
+        tamañoMayor = tamañoNumero1;
+    }else{
+        tamañoMayor = tamañoNumero2;
     }
-return i;}
+
+    for(int i=0;i<tamañoMayor;i++){
+        char c1 = numero1[tamañoNumero1-1-i];
+        char c2 = numero2[tamañoNumero2-1-i];
+        int ic1 = toInt(c1);
+        int ic2 = toInt(c2);
+        int suma = ic1+ic2+acarreo;
+        int residuo = suma%baseDestino;
+        acarreo = suma/baseDestino;
+        arrayInts[i] = residuo;
+    }
+
+    if(acarreo!=0){
+        arrayInts[tamañoMayor]=acarreo;
+        tamañoMayor++;
+    }
+
+    toCadena(arrayInts, sumaFinal, tamañoMayor-1);
+}
 
 //Convertir de arreglo de int a cadena
 void toCadena(int *arrEnBaseDestino, char *cadena, int tamaño){
     for(int i=0; i<=tamaño; i++){
         if(arrEnBaseDestino[tamaño-i] >= 10){
             cadena[i] = arrEnBaseDestino[tamaño-i] + ('a'-10);
-            printf("char en %i es: %c",i, arrEnBaseDestino[tamaño-i] + ('a'-10));
         }else{
             cadena[i] = arrEnBaseDestino[tamaño-i] + '0';
         }
     }
-    arrEnBaseDestino[tamaño+1] = '\0';
+    cadena[tamaño+1] = '\0';
+}
+
+void toAnyBase2 (char *numero, int baseActual, int baseDestino, char *cadena){
+    
+    int tamañoDeNIni = strlen(numero);
+
+    //Validacion
+    if(baseActual >= 2 && baseActual <= 16 && baseDestino >= 2 && baseDestino <= 16){
+        for(int i=tamañoDeNIni-1;i>=0;i--){
+            char n = numero[i];
+            if(!(((n >= '0' && n <= '9') || (n >= 'a' && n <= 'f')) && ((baseActual > 10 && n < baseActual-10+'a')  || (n < baseActual+'0')))){
+                printf("\ninserte valores validos");
+                exit(-1);
+            }
+        }
+    }else{
+        printf("\ninserte una base valida");
+        exit(-1);
+    }
+
+    //Convertimos a base 10
+    int nBase10 = 0;
+    for(int i=tamañoDeNIni-1;i>=0;i--){
+        char n = numero[i];
+        int cifraSignificativa = pow(baseActual,tamañoDeNIni-i-1);
+        if(n >= 'A'){
+            nBase10 += (n-'a'+10)*cifraSignificativa;
+        }else{
+            nBase10 += (n-48)*cifraSignificativa;
+        }
+    }
+
+    //Convertimos a la base deseada pero dentro de un arreglo de enteros
+    int arrEnBaseDestino[500];
+    int cociente = nBase10;
+    int tamaño;
+
+    for(tamaño=0;tamaño<100;tamaño++){
+        if(cociente<baseDestino){
+            arrEnBaseDestino[tamaño] = cociente;
+            break;
+        }else{
+            arrEnBaseDestino[tamaño] = cociente%baseDestino;
+            cociente = cociente/baseDestino;
+        }
+    }
+
+    //Convertimos a una cadena el array de enteros
+    toCadena(arrEnBaseDestino, cadena, tamaño);
 }
